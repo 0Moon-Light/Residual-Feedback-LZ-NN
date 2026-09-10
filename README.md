@@ -34,10 +34,10 @@ Instead of learning a single monolithic distribution, **0Moon-Light C2** evaluat
   $$P(\text{is\_match}_t \mid S_{t-1}, \text{context})$$
 
 * **Literal Head (Conditioned on Unmatched Suffix):**
-  $$P(x_t \mid S_{t-1}, \text{unmatched\_suffix}, \text{context}) \quad \text{if } \text{is\_match}_t = 0$$
+  $$P(x_t \mid S_{t-1}, \text{unmatched\_suffix}, \text{context}) \quad \text{for } \text{is\_match}_t = 0$$
 
 * **Match Head (Conditioned on Deterministic Copy History):**
-  $$P(\text{next\_byte\_after\_match} \mid \text{history}[\text{pos} + \text{len}]) \quad \text{if } \text{is\_match}_t = 1$$
+  $$P(\text{next\_byte\_after\_match} \mid \text{history}[\text{pos} + \text{len}]) \quad \text{for } \text{is\_match}_t = 1$$
 
 ---
 
