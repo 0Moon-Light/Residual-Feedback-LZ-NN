@@ -1,5 +1,4 @@
-# Residual-Feedback LZ+NN 🧠⚡
-
+# Residual-Feedback LZ+NN
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Topic: Neural Compression](https://img.shields.io/badge/Domain-Neural%20Compression-green.svg)]()
@@ -25,19 +24,19 @@ Attempting to model both regimes using a single monolithic neural network is hig
 
 ### 1. LZ State Space ($S_t$)
 At byte index $t$, the state of the LZ machine is defined as:
-$$S_t = (\text{is\_match}, \text{match\_len}, \text{match\_dist}, \text{literal\_run})$$
+$$S_t = (\text{is-match}, \text{match-len}, \text{match-dist}, \text{literal-run})$$
 
 ### 2. Multi-Head Conditional Probabilities
 Rather than fitting a single distribution, the model evaluates specialized conditional heads:
 
 * **Literal Head (Conditioned on Unmatched Suffix):**
-  $$P(x_t \mid S_{t-1}, \text{unmatched\_suffix}, \text{context}) \quad \text{for } \text{is\_match}_t = 0$$
+  $$P(x_t \mid S_{t-1}, \text{unmatched-suffix}, \text{context}) \quad \text{for } \text{is-match}_t = 0$$
 
 * **Match Head (Conditioned on Deterministic Copy History):**
-  $$P(\text{next\_byte\_after\_match} \mid \text{history}[\text{pos} + \text{len}]) \quad \text{for } \text{is\_match}_t = 1$$
+  $$P(\text{next-byte-after-match} \mid \text{history}[\text{pos} + \text{len}]) \quad \text{for } \text{is-match}_t = 1$$
 
 * **Match Regime Probability:**
-  $$P(\text{is\_match}_t \mid S_{t-1}, \text{context})$$
+  $$P(\text{is-match}_t \mid S_{t-1}, \text{context})$$
 
 ---
 
