@@ -1,37 +1,34 @@
-# Residual-Feedback LZ+NN 
+# Residual-Feedback LZ+NN 🧠⚡
 
-[![Author: 0Moon-Light](https://img.shields.io/badge/Author-0Moon--Light-purple.svg)]()
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Topic: Neural Compression](https://img.shields.io/badge/Domain-Neural%20Compression-green.svg)]()
+[![Topic: Information Theory](https://img.shields.io/badge/Math-Information%20Theory-green.svg)]()
 
-> **Residual Modeling of Neural Probabilities Conditioned on LZ Machine States & KL-Budget Expert Arbitration.**
-
----
-
-## 📌 Concept & Intuition
-
-Currently, deterministic LZ-style algorithms (like LZ77/LZSS) are used in neural data compression as passive context providers. However, LZ divides data streams into two fundamental operational regimes:
-1. **Match (Exact pattern copying)**
-2. **Literal (Novel byte emission)**
-
-Attempting to model both regimes using a single monolithic neural network or context mixer is suboptimal. 
-
-**0Moon-Light C2** offloads the deterministic copying mechanism from the neural model to LZ. Instead of estimating absolute probabilities $P(x_t \mid \text{context})$, the network models **residuals conditional on the LZ state machine**.
+> **Residual Modeling of Neural Probabilities Conditioned on LZ State Machines & KL-Budget Expert Arbitration.**
 
 ---
 
-## 🧮 Formal Mathematical Architecture
+## 📌 Overview & Core Intuition
+
+In neural data compression, deterministic algorithms (like LZ77/LZSS) are traditionally used merely as passive context providers for neural network inputs. However, LZ algorithms naturally segment data streams into two fundamental operational regimes:
+1. **Match Regime** (Deterministic copying of prior byte sequences)
+2. **Literal Regime** (Emission of novel, unmatched bytes)
+
+Attempting to model both regimes using a single monolithic neural network is highly suboptimal.
+
+**Residual-Feedback LZ+NN** offloads the heavy burden of discovering long-range sequence copies to the LZ state machine. Instead of forcing the neural network to learn absolute probabilities $P(x_t \mid \text{context})$, the network models **conditional residual probabilities conditioned on the LZ state**.
+
+---
+
+## 🧮 Formal Architecture
 
 ### 1. LZ State Space ($S_t$)
-At byte index $t$, the LZ machine state is defined as:
+At byte index $t$, the state of the LZ machine is defined as:
 $$S_t = (\text{is\_match}, \text{match\_len}, \text{match\_dist}, \text{literal\_run})$$
 
-### 2. Dual-Head Conditional Prediction
-Instead of learning a single monolithic distribution, **0Moon-Light C2** evaluates conditional probability heads:
-
-* **Probability of Match Regime:**
-  $$P(\text{is\_match}_t \mid S_{t-1}, \text{context})$$
+### 2. Multi-Head Conditional Probabilities
+Rather than fitting a single distribution, the model evaluates specialized conditional heads:
 
 * **Literal Head (Conditioned on Unmatched Suffix):**
   $$P(x_t \mid S_{t-1}, \text{unmatched\_suffix}, \text{context}) \quad \text{for } \text{is\_match}_t = 0$$
@@ -39,40 +36,43 @@ Instead of learning a single monolithic distribution, **0Moon-Light C2** evaluat
 * **Match Head (Conditioned on Deterministic Copy History):**
   $$P(\text{next\_byte\_after\_match} \mid \text{history}[\text{pos} + \text{len}]) \quad \text{for } \text{is\_match}_t = 1$$
 
+* **Match Regime Probability:**
+  $$P(\text{is\_match}_t \mid S_{t-1}, \text{context})$$
+
 ---
 
-## ⚖️ Integration with KL-Budget Expert Arbitrator
+## ⚖️ Dynamic Arbitration via KL-Budget Expert Arbitrator
 
-To blend the outputs of the **Match Head**, **Literal Head**, and **Gated Context Head**, we deploy the **KL-Budget Expert Arbitrator**:
+To optimally blend predictions from the specialized heads, we deploy a **KL-Budget Expert Arbitrator** using dynamic Softmax weights:
 
 $$W_i(c) = \frac{\exp\left(-\alpha L_i(c) - \beta V_i(c) + \gamma A_i(c)\right)}{\sum_j \exp\left(-\alpha L_j(c) - \beta V_j(c) + \gamma A_j(c)\right)}$$
 
 Where:
-* $L_i(c)$: Expected Cross-Entropy Loss of Head $i$
-* $V_i(c)$: Loss Variance (Penalizes unstable heads)
-* $A_i(c) = -D_{\text{KL}}(p_i \parallel p_{\text{consensus}})$: Consensus agreement penalizing overconfident outliers
+- $L_i(c)$: Expected Cross-Entropy Loss of Head $i$
+- $V_i(c)$: Loss Variance (Penalizes volatile predictions)
+- $A_i(c) = -D_{\text{KL}}(p_i \parallel p_{\text{consensus}})$: Consensus agreement measuring group alignment
 
 ---
 
-## 📊 Benchmark & Performance Visualization
+## 📊 Benchmark & Performance
 
-Here is the empirical benchmark visualization generated directly by [`c2_residual_lz_nn.py`](file:///home/moonlight/Pulpit/PHANTOMAI/c2_residual_lz_nn.py):
+Empirical benchmark comparing a Standard Neural Network, a Hard-Switch LZ+NN, and **Residual-Feedback LZ+NN**:
 
-![0Moon-Light C2 Benchmark](./0moon_light_c2_benchmark.png)
+![Residual-Feedback LZ+NN Benchmark](./0moon_light_c2_benchmark.png)
 
-### Why 0Moon-Light C2 Outperforms Standard Architectures:
-1. **Entropy Reduction**: Offloading long-range copying (e.g. 500-byte matches) to LZ drastically reduces the target entropy for the neural network.
-2. **Specialized Literal Learning**: The neural network focuses purely on predicting novel, non-repeating bytes (`unmatched_suffix`).
+### Why This Approach Succeeds:
+- **Drastic Entropy Reduction**: Removing the copying load from the neural network lowers cross-entropy loss.
+- **Risk-Aware Ensembling**: The KL-Budget Arbitrator dynamically downweights unstable or overconfident predictions.
 
 ---
 
 ## 🚀 Quickstart
 
-### Project Code Files
-- Main Simulation & Plotting Script: [`c2_residual_lz_nn.py`](file:///home/moonlight/Pulpit/PHANTOMAI/c2_residual_lz_nn.py)
-- Math & Arbitrator Verification Script: [`kl_budget_arbitrator.py`](file:///home/moonlight/Pulpit/PHANTOMAI/kl_budget_arbitrator.py)
+### Main Files
+- Benchmark & Simulation Script: [`c2_residual_lz_nn.py`](file:///home/moonlight/Pulpit/PHANTOMAI/c2_residual_lz_nn.py)
+- Math & Arbitrator Script: [`kl_budget_arbitrator.py`](file:///home/moonlight/Pulpit/PHANTOMAI/kl_budget_arbitrator.py)
 
-### Running the Benchmark
+### Run Benchmark
 ```bash
 python c2_residual_lz_nn.py
 ```
@@ -81,4 +81,4 @@ python c2_residual_lz_nn.py
 
 ## 📜 License
 
-Distributed under the **MIT License**. Author: **0Moon-Light**.
+Distributed under the **MIT License**.
